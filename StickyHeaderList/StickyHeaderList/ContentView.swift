@@ -230,7 +230,7 @@ struct DummyCardView: View {
                 .fill(.gray.opacity(0.1))
                 .frame(width: 100, height: 100)
         }
-        .redacted(reason: .placeholder)
+        .redacted(reason: .placeholder) // 이 기능 새롭게 알게 됨
         .padding(10)
         .padding(.leading, 10)
         .background(.ultraThinMaterial, in: .rect(cornerRadius: 30))
