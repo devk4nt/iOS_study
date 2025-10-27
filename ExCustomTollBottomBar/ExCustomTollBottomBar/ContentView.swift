@@ -17,7 +17,7 @@ struct ContentView: View {
         NavigationStack(path: $path) {
             /// Dummy List View
             List {
-                ForEach(1...4, id: \.self) { index in
+                ForEach(1...50, id: \.self) { index in
                     NavigationLink(value: "iCloud+ Subscription") {
                         Text("iCloud+ Subscription \(index)")
                     }
@@ -40,6 +40,11 @@ struct ContentView: View {
             }
         }
         .safeAreaBar(edge: .bottom, spacing: 0) {
+            /// Empty View don't have the soft blur effects!
+            Text(".")
+                .frame(height: 50)
+        }
+        .overlay(alignment: .bottom) {
             CustomBottomBar(
                 path: $path,
                 searchText: $searchText,
@@ -55,7 +60,8 @@ struct ContentView: View {
                             Image(systemName: "folder")
                             Image(systemName: "arrowshape.turn.up.forward.fill")
                         }
-                        .blurFade(isExpanded)
+                        .opacity(1.0)
+                        //.blurFade(isExpanded) // TODO: - 이렇게 추적하고 있는 중이였음
                     }
                     .font(.title2)
                     
@@ -86,29 +92,33 @@ struct CustomBottomBar<LeadingContent: View, MainAction: View>: View {
     @State private var bounce: CGFloat = 0
     
     var body: some View {
+//        GlassEffectContainer(spacing: 10) {
+//            
+//        }
         HStack(spacing: 10) {
             /// Hiding it when keyboard is expanded!
-            if !isKeyboardActive.wrappedValue {
-                Circle()
-                    .foregroundStyle(.clear)
-                    .frame(width:50, height: 50)
-                    .overlay(alignment: .leading) {
-                        let layout = isExpanded ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(ZStackLayout())
-                        
-                        layout {
-                            
+            Circle()
+                .foregroundStyle(.green)
+                .frame(width:50, height: 50)
+                .overlay(alignment: .leading) {
+//                    let layout = isExpanded ? AnyLayout(HStackLayout(spacing: 10)) : AnyLayout(ZStackLayout())
+//                    
+//                    layout {
+//                        
+//                    }
+                    HStack(spacing: 10) {
+                        ForEach(subviews: leadingContent(isExpanded)) { subview in
+                            subview
+                                .frame(width: 50, height: 50)
                         }
-                        HStack(spacing: 10) {
-                            ForEach(subviews: leadingContent(isExpanded)) { subview in
-                                subview
-                                    .frame(width: 50, height: 50)
-                            }
-                        }
-                        .modifier(ScaleModifier(bounce: bounce))
                     }
-                    .zIndex(1000)
-                    .transition(.blurReplace)
-            }
+                    /// Start
+                    .blurFade(!isKeyboardActive.wrappedValue)
+                    .modifier(ScaleModifier(bounce: bounce))
+                }
+                .zIndex(1000)
+                .transition(.blurReplace)
+                .blurFade(!isKeyboardActive.wrappedValue)
             
             /// Search Bar
             GeometryReader {
@@ -132,12 +142,18 @@ struct CustomBottomBar<LeadingContent: View, MainAction: View>: View {
                 .padding(.horizontal, 15)
                 .frame(width: size.width, height: size.height)
                 .geometryGroup()
+                /// Start
+                .blurFade(!isExpanded)
+                .scaleEffect(isExpanded ? scale : 1, anchor: .topLeading)
+                /// End
                 .glassEffect(.regular.interactive(), in: .capsule)
                 .blurFade(!isExpanded)
                 .scaleEffect(isExpanded ? scale : 1, anchor: .leading)
                 .offset(x: isExpanded ? -50 : 0)
             }
             .frame(height: 50)
+            /// 50 Width, 10 Spacing!
+            .padding(.leading, isKeyboardActive.wrappedValue ? -60 : 0)
             /// Disabling Interaction when expanded
             .disabled(isExpanded)
             
@@ -148,6 +164,7 @@ struct CustomBottomBar<LeadingContent: View, MainAction: View>: View {
                 .glassEffect(.regular.interactive(), in: .circle)
         }
         .padding(.horizontal, 20)
+        .padding(.bottom, isKeyboardActive.wrappedValue ? 15 : 0)
         .animation(.smooth(duration: 0.3, extraBounce: 0), value: isKeyboardActive.wrappedValue)
         .animation(.bouncy, value: isExpanded)
         .onChange(of: isExpanded) { oldValue, newValue in
@@ -183,6 +200,8 @@ struct ScaleModifier: ViewModifier, Animatable {
         content
             .compositingGroup()
             .blur(radius: loopProgress * 5)
+            /// Start
+            .offset(x: loopProgress * 15, y: loopProgress * 8)
             .glassEffect(.regular.interactive(), in: .capsule)
             .scaleEffect(1 + (loopProgress * 0.38), anchor: .center)
     }
